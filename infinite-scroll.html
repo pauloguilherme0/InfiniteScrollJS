@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Scroll Test</title>
+    <style>
+        /* Adicione estilos para o elemento 'projects-container' aqui */
+        #projects-container {
+            max-height: 400px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div id="projects-container"></div>
+
+    <script>
+        let isLoading = false; // Variável para controlar o estado de carregamento
+        let currentPage = 1; // Comece a partir do número 1
+        const pageSize = 10; // Tamanho da página a ser carregada (10 itens por vez)
+
+        // Função para gerar dados de projeto simulados
+        function generateProjectData(cursor, pageSize) {
+            const data = [];
+
+            for (let i = 0; i < pageSize; i++) {
+                const currentTime = Date.now();
+                const project = {
+                    name: `Project ${i + cursor} (server time: ${currentTime})`,
+                    id: i + cursor,
+                };
+                data.push(project);
+            }
+
+            const nextId = cursor + pageSize;
+            return { data, nextId };
+        }
+
+        // Função para anexar projetos à página
+        function appendProjectsToPage(projects) {
+            const container = document.getElementById('projects-container');
+            projects.forEach(project => {
+                const projectElement = document.createElement('p');
+                projectElement.style.border = '1px solid gray';
+                projectElement.style.borderRadius = '5px';
+                projectElement.style.padding = '10px 10px';
+                projectElement.style.background = `hsla(${project.id * 30}, 60%, 80%, 1)`;
+                projectElement.innerText = project.name;
+                container.appendChild(projectElement);
+            });
+        }
+
+        // Função para carregar mais dados
+        function loadMoreData() {
+            if (isLoading) return; // Impedir carregamento duplicado
+
+            isLoading = true; // Sinalizar que uma requisição está em andamento
+
+            const container = document.getElementById('projects-container');
+            const loadingText = document.createElement('p');
+            loadingText.innerText = 'Carregando...';
+            container.appendChild(loadingText); // Exibir "Carregando..."
+
+            const { data, nextId } = generateProjectData(currentPage, pageSize);
+
+            setTimeout(() => {
+                container.removeChild(loadingText); // Remover "Carregando..."
+
+                isLoading = false; // Sinalizar que a requisição foi concluída
+                currentPage = nextId; // Atualizar a página atual
+                appendProjectsToPage(data); // Anexar os novos projetos à página
+
+                // Verificar se há mais dados para carregar
+                const scrollHeight = container.scrollHeight;
+                const scrollTop = container.scrollTop;
+                const clientHeight = container.clientHeight;
+
+                if (scrollHeight - scrollTop <= clientHeight + 200) {
+                    // Quando o usuário rolar até o final, carregue os próximos 10 resultados
+                    loadMoreData();
+                }
+            }, 2000); // Simular um atraso na resposta da API (aumentado para 2000 ms)
+        }
+
+        // Inicialmente, carregue os primeiros 10 dados
+        loadMoreData();
+
+        // Verificar o scroll enquanto o usuário rola a página
+        const container = document.getElementById('projects-container');
+        container.addEventListener('scroll', function() {
+            const scrollHeight = container.scrollHeight;
+            const scrollTop = container.scrollTop;
+            const clientHeight = container.clientHeight;
+
+            if (scrollHeight - scrollTop <= clientHeight + 200) {
+                // Quando o usuário rolar até o final, carregue os próximos 10 resultados
+                loadMoreData();
+            }
+        });
+    </script>
+</body>
+</html>
